@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inventory-ui
+  template:
+    metadata:
+      labels:
+        app: inventory-ui
+    spec:
+      containers:
+      - name: inventory-ui
+        image: 275995788760.dkr.ecr.eu-north-1.amazonaws.com/inventory-ui:latest
+        ports:
+        - containerPort: 8501
+        env:
+        - name: API_URL
+          value: http://inventory-api:8000/api/chat

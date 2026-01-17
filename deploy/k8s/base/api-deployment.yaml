@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inventory-api
+  template:
+    metadata:
+      labels:
+        app: inventory-api
+    spec:
+      containers:
+      - name: inventory-api
+        image: 275995788760.dkr.ecr.eu-north-1.amazonaws.com/inventory-api:latest
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - secretRef:
+            name: inventory-secrets

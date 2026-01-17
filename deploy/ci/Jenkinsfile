@@ -1,0 +1,58 @@
+pipeline {
+  agent any
+
+  environment {
+    AWS_REGION = "eu-north-1"
+    AWS_ACCOUNT_ID = "275995788760"
+
+    ECR_API = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/inventory-api"
+    ECR_UI  = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/inventory-ui"
+
+    IMAGE_TAG = "${env.GIT_COMMIT}"
+  }
+
+  stages {
+
+    stage('Test') {
+      steps {
+        sh 'python -m unittest discover tests'
+      }
+    }
+
+    stage('Build API Image') {
+      steps {
+        sh '''
+          docker build -t inventory-api:${IMAGE_TAG} apps/api
+          docker tag inventory-api:${IMAGE_TAG} ${ECR_API}:${IMAGE_TAG}
+        '''
+      }
+    }
+
+    stage('Build UI Image') {
+      steps {
+        sh '''
+          docker build -t inventory-ui:${IMAGE_TAG} apps/ui
+          docker tag inventory-ui:${IMAGE_TAG} ${ECR_UI}:${IMAGE_TAG}
+        '''
+      }
+    }
+
+    stage('Login to ECR & Push') {
+      steps {
+        sh '''
+          aws ecr get-login-password --region ${AWS_REGION} \
+            | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+
+          docker push ${ECR_API}:${IMAGE_TAG}
+          docker push ${ECR_UI}:${IMAGE_TAG}
+        '''
+      }
+    }
+  }
+
+  post {
+    always {
+      sh 'docker system prune -f'
+    }
+  }
+}

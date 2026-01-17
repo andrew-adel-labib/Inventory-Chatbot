@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: inventory-analytics
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/<your-org>/inventory-analytics-platform
+    targetRevision: main
+    path: deploy/kubernetes/base
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
