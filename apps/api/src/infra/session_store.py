@@ -1,6 +1,6 @@
 import time
-from app_logging import get_logger
-from config import SESSION_TTL_SECONDS
+from apps.api.src.app_logging import get_logger
+from apps.api.src.config import SESSION_TTL_SECONDS
 
 logger = get_logger(__name__)
 

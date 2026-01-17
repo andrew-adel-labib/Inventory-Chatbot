@@ -1,6 +1,6 @@
 from collections import OrderedDict
-from app_logging import get_logger
-from config import CACHE_SIZE
+from apps.api.src.app_logging import get_logger
+from apps.api.src.config import CACHE_SIZE
 
 logger = get_logger(__name__)
 

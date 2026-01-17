@@ -1,17 +1,17 @@
 import json
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from app_logging import configure_logging, get_logger
-from config import MODEL_NAME
-from error_handling import APIError, UnauthorizedError, UnsupportedIntentError
-from domain.authorization import is_authorized
-from domain.intents import SUPPORTED_INTENTS
-from domain.sql_templates import SQL_TEMPLATES
-from infra.session_store import SessionStore
-from infra.cache import IntentCache
-from infra.sandbox import validate_sql
-from llm.azure_openai import classify_intent
-from llm.prompts import SYSTEM_PROMPT
+from apps.api.src.app_logging import configure_logging, get_logger
+from apps.api.src.config import MODEL_NAME
+from apps.api.src.error_handling import APIError, UnauthorizedError, UnsupportedIntentError
+from apps.api.src.domain.authorization import is_authorized
+from apps.api.src.domain.intents import SUPPORTED_INTENTS
+from apps.api.src.domain.sql_templates import SQL_TEMPLATES
+from apps.api.src.infra.session_store import SessionStore
+from apps.api.src.infra.cache import IntentCache
+from apps.api.src.infra.sandbox import validate_sql
+from apps.api.src.llm.azure_openai import classify_intent
+from apps.api.src.llm.prompts import SYSTEM_PROMPT
 
 configure_logging()
 logger = get_logger("inventory-api")

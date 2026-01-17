@@ -1,9 +1,8 @@
 import json
 import time
 import urllib.request
-
-from app_logging import get_logger
-from config import (
+from apps.api.src.app_logging import get_logger
+from apps.api.src.config import (
     AZURE_OPENAI_ENDPOINT,
     AZURE_OPENAI_DEPLOYMENT,
     AZURE_OPENAI_API_KEY,
