@@ -1,5 +1,4 @@
 import json
-import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from apps.api.src.app_logging import configure_logging, get_logger
 from apps.api.src.config import MODEL_NAME
@@ -48,24 +47,28 @@ class ChatHandler(BaseHTTPRequestHandler):
             messages.append({"role": "user", "content": message})
 
             cached_intent = intent_cache.get(message)
-            start = time.monotonic()
+
 
             if cached_intent:
                 intent = cached_intent
                 latency_ms = 0
+                token_usage = {
+                    "prompt_tokens": 0,
+                    "completion_tokens": 0,
+                    "total_tokens": 0,
+                }
             else:
                 llm_messages = [
                     {"role": "system", "content": SYSTEM_PROMPT},
                     {"role": "user", "content": message},
                 ]
 
-                llm_response_text, latency_ms = classify_intent(llm_messages)
+                llm_text, latency_ms, token_usage = classify_intent(llm_messages)
 
                 try:
-                    parsed = json.loads(llm_response_text)
+                    parsed = json.loads(llm_text)
                     intent = parsed["intent"]
                 except (json.JSONDecodeError, KeyError):
-                    logger.error("Invalid LLM response: %s", llm_response_text)
                     raise APIError("Invalid LLM response format")
 
                 intent_cache.set(message, intent)
@@ -78,27 +81,55 @@ class ChatHandler(BaseHTTPRequestHandler):
 
             answer_template, sql = SQL_TEMPLATES[intent]
             validate_sql(sql)
-    
+
             session_store.save(session_id, messages)
 
-            self._respond({
-                "status": "ok",
-                "intent": intent,
+            response = {
                 "natural_language_answer": answer_template.format(value="X"),
                 "sql_query": sql.strip(),
+                "token_usage": token_usage,
                 "latency_ms": latency_ms,
                 "provider": "azure",
                 "model": MODEL_NAME,
-            })
+                "status": "ok",
+            }
+
+            self._respond(response)
 
         except APIError as e:
-            logger.warning("Handled API error: %s", e.message)
-            self._respond(e.to_response(), e.status_code)
+            self._respond(
+                {
+                    "status": "error",
+                    "natural_language_answer": "",
+                    "sql_query": "",
+                    "token_usage": {
+                        "prompt_tokens": 0,
+                        "completion_tokens": 0,
+                        "total_tokens": 0,
+                    },
+                    "latency_ms": 0,
+                    "provider": "azure",
+                    "model": MODEL_NAME,
+                },
+                e.status_code,
+            )
 
         except Exception:
             logger.exception("Unhandled server error")
             self._respond(
-                {"status": "error", "message": "Internal server error"},
+                {
+                    "status": "error",
+                    "natural_language_answer": "",
+                    "sql_query": "",
+                    "token_usage": {
+                        "prompt_tokens": 0,
+                        "completion_tokens": 0,
+                        "total_tokens": 0,
+                    },
+                    "latency_ms": 0,
+                    "provider": "azure",
+                    "model": MODEL_NAME,
+                },
                 500,
             )
 

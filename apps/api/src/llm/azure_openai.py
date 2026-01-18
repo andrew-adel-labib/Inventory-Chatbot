@@ -1,4 +1,5 @@
 import json
+import time
 import urllib.request
 from apps.api.src.app_logging import get_logger
 from apps.api.src.config import (
@@ -22,8 +23,6 @@ def classify_intent(messages):
         f"/chat/completions?api-version={API_VERSION}"
     )
 
-    logger.info("Azure OpenAI URL: %s", url)
-
     payload = {
         "messages": messages,
         "temperature": 0,
@@ -42,10 +41,24 @@ def classify_intent(messages):
         method="POST",
     )
 
+    start = time.monotonic()
+
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:
+            latency_ms = int((time.monotonic() - start) * 1000)
             body = json.loads(resp.read().decode("utf-8"))
-            return body["choices"][0]["message"]["content"], 0
+
+            message = body["choices"][0]["message"]["content"]
+            usage = body.get("usage", {})
+
+            token_usage = {
+                "prompt_tokens": usage.get("prompt_tokens", 0),
+                "completion_tokens": usage.get("completion_tokens", 0),
+                "total_tokens": usage.get("total_tokens", 0),
+            }
+
+            return message, latency_ms, token_usage
+
     except urllib.error.HTTPError as e:
         error_body = e.read().decode("utf-8")
         logger.error("Azure OpenAI HTTP error %s: %s", e.code, error_body)
