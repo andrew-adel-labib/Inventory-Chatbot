@@ -4,12 +4,12 @@
 
 ## Overview
 
-This project implements a **production‑ready inventory analytics chatbot** that answers business questions in natural language and returns:
+This project implements a **production-ready inventory analytics chatbot** that answers business questions in natural language and returns:
 
-- a **human‑readable answer**
+- a **human-readable answer**
 - the **exact SQL query (“present query”)** the system would run
 
-The system demonstrates **safe LLM integration, deterministic SQL reasoning, role‑based access control, CI/CD, and GitOps‑based Kubernetes deployment**, while intentionally avoiding unnecessary complexity.
+The system demonstrates **safe LLM integration, deterministic SQL reasoning, role-based access control, CI/CD, and GitOps-based Kubernetes deployment**
 
 ---
 
@@ -17,7 +17,7 @@ The system demonstrates **safe LLM integration, deterministic SQL reasoning, rol
 
 The platform follows a clean separation of concerns and a GitOps deployment model.
 
-**High‑level flow:**
+**High-level flow:**
 
 User → Streamlit UI → Inventory API → Azure OpenAI (intent classification only)  
 GitHub → Jenkins (CI) → AWS ECR → Argo CD → Amazon EKS
@@ -29,9 +29,8 @@ GitHub → Jenkins (CI) → AWS ECR → Argo CD → Amazon EKS
 - LLM is used **only for intent classification**
 - SQL is **never generated dynamically**
 - SQL queries are **static templates** derived from the provided schema
-- No database execution (queries are presented only)
 - Centralized logging and error handling
-- Environment‑driven configuration
+- Environment-driven configuration
 - Git as the single source of truth
 
 ---
@@ -39,18 +38,18 @@ GitHub → Jenkins (CI) → AWS ECR → Argo CD → Amazon EKS
 ## Request Lifecycle
 
 1. User submits a question via Streamlit UI
-2. API retrieves session context (TTL‑based)
-3. Intent is classified using Azure OpenAI
-4. RBAC validates intent access
+2. API retrieves session context (**in-memory session store with TTL**)
+3. Intent is classified using **Azure OpenAI**
+4. **Role-Based Access Control (RBAC)** validates intent access
 5. SQL template is selected deterministically
 6. SQL is validated by a safety sandbox
 7. Natural language answer + SQL query returned
 
 ---
 
-## SQL Strategy
+## SQL Strategy (“Present Query”)
 
-- All SQL queries are predefined templates
+- All SQL queries are **predefined static templates**
 - Fully aligned with the provided SQL Server schema
 - No string interpolation from user input
 - No execution, no side effects
@@ -77,79 +76,100 @@ This guarantees:
 
 ---
 
-## Configuration & Secrets
+## Local Development
 
-- Local development uses a lightweight `.env` loader
-- Production secrets are injected via Kubernetes Secrets
-- No credentials are committed to the repository
-- Containers run as non‑root users
+### Run Backend API
+
+```bash
+python -m apps.api.src.main
+```
+
+### Run Streamlit Frontend
+
+```bash
+streamlit run app.py
+```
 
 ---
 
-## CI/CD Flow
+## Session Memory & RBAC
+
+- Session-based conversation memory (in-memory)
+- TTL-based expiration
+- Role-based authorization per intent
+- Viewer / Finance / Admin separation
+
+---
+
+## Configuration & Secrets
+
+Environment variables:
+
+```
+PROVIDER=openai | azure
+OPENAI_API_KEY=...
+AZURE_OPENAI_ENDPOINT=...
+AZURE_OPENAI_API_KEY=...
+AZURE_OPENAI_DEPLOYMENT=...
+MODEL_NAME=...
+```
+
+---
+
+## CI/CD & GitOps Workflow
 
 ```
 GitHub Push
    ↓
 Jenkins (Tests + Build)
    ↓
-AWS ECR (Images)
+AWS ECR
    ↓
-Argo CD (GitOps)
+Argo CD
    ↓
 Amazon EKS
 ```
 
-- Jenkins handles **CI only**
-- Argo CD handles **deployment**
-- No kubectl or Helm in CI pipelines
+- Jenkins tested locally
+- GitHub Webhooks enabled
+- Argo CD runs inside EKS
+- GitOps-based deployment
 
 ---
 
 ## Testing
 
-Run all unit tests:
-
 ```bash
 python -m unittest discover tests
 ```
 
-Coverage includes:
-- Role‑based access control
-- Session TTL eviction
-- SQL intent completeness
-
----
-
-## Logging & Error Handling
-
-- Logging configured once at application startup
-- Consistent structured logging across all layers
-- Domain and infrastructure layers raise exceptions
-- HTTP layer translates exceptions to responses
+Covers:
+- RBAC
+- Session TTL
+- Intent-to-SQL mapping
+- Error handling
 
 ---
 
 ## Security Considerations
 
 - No SQL execution
-- Deterministic SQL templates only
-- LLM constrained to JSON output
-- Secrets injected at runtime
-- Non‑root containers
-- No external exposure by default
+- Deterministic SQL only
+- JSON-only LLM output
+- Secrets via environment/K8s
+- Non-root containers
 
 ---
 
 ## Contact
 
 **Andrew Adel Labib**  
-AI / ML Engineer 
+AI / ML Engineer  
 
 📍 Cairo, Egypt  
 
-📧 Email: andrewadellabib77@gmail.com  
-📞 Phone: +20 106 376 9806 / +20 128 663 2047  
+📧 andrewadellabib77@gmail.com  
+📞 +20 106 376 9806 / +20 128 663 2047  
 
 🔗 LinkedIn: https://linkedin.com/in/andrew-adel-b865b1244  
 💻 GitHub: https://github.com/andrew-adel-labib
